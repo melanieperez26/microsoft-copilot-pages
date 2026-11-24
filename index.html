@@ -171,7 +171,7 @@ button{font:inherit;color:inherit}
   <div id="cover" onclick="startVideo()">
     <button class="play" aria-label="Reproducir video de apertura"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
     <h2>Copilot Pages</h2>
-    <p>Pulsa para iniciar la presentación · video con sonido</p>
+    <p>Pulsa para iniciar la presentación</p>
     <small>← → para navegar · F pantalla completa · S para saltar el video</small>
   </div>
   <button id="skip" onclick="skipIntro()">Saltar introducción ›</button>
@@ -242,6 +242,7 @@ button{font:inherit;color:inherit}
   <div class="footer"><span>COPILOT PAGES &nbsp;/&nbsp; CIERRE</span><b>03</b></div>
 </section>
 
+<section class="slide" id="s4"><span class="tag" data-a="up">DINÁMICA FINAL</span><h1 class="title" data-a="up">¡Participa y gana!</h1><p class="sub">Levanta la mano y responde. Tres preguntas, tres premios.</p><div class="step" style="margin-top:5vh;padding:3vw;min-height:38vh;justify-content:center"><b id="qnum"></b><h2 id="qtext" style="font-size:calc(var(--u)*3.5);line-height:1.2"></h2><div id="qanswer" style="visibility:hidden;color:var(--cyan);font-size:calc(var(--u)*2.4);padding-top:2vh;border-top:1px solid var(--line)"></div></div><div class="footer"><span>COPILOT PAGES / DINÁMICA FINAL</span><b>04</b></div></section>
 <div id="pager"></div>
 <div id="nav"><button onclick="back()" aria-label="Anterior">← Anterior</button><button onclick="next()" aria-label="Siguiente">Siguiente →</button><button onclick="fs()" aria-label="Pantalla completa">⛶</button></div>
 
@@ -267,24 +268,25 @@ button{font:inherit;color:inherit}
 const movie=document.getElementById('movie'), intro=document.getElementById('intro'), cover=document.getElementById('cover'),
       slides=[...document.querySelectorAll('.slide')], bar=document.getElementById('bar'), vprog=document.getElementById('vprog'), pager=document.getElementById('pager');
 let idx=-1, busy=false;
-for(let i=0;i<4;i++){const d=document.createElement('i');d.onclick=()=>go(i-1);pager.appendChild(d)}
-function mark(){[...pager.children].forEach((d,i)=>d.classList.toggle('on',i===idx+1));bar.style.width=((idx+2)/4*100)+'%'}
+for(let i=0;i<slides.length+1;i++){const d=document.createElement('i');d.onclick=()=>go(i-1);pager.appendChild(d)}
+function mark(){[...pager.children].forEach((d,i)=>d.classList.toggle('on',i===idx+1));bar.style.width=((idx+2)/(slides.length+1)*100)+'%'}
 function startVideo(){cover.classList.add('off');intro.classList.add('playing');movie.currentTime=0;movie.play().catch(()=>{cover.classList.remove('off')})}
 function skipIntro(){movie.pause();go(0)}
 movie.addEventListener('timeupdate',()=>{vprog.style.width=(movie.currentTime/(movie.duration||41.6)*100)+'%'});
 movie.addEventListener('ended',()=>go(0));
 movie.addEventListener('click',()=>{movie.paused?movie.play():movie.pause()});
 function go(n){
-  n=Math.max(-1,Math.min(2,n)); if(n===idx||busy) return;
+  n=Math.max(-1,Math.min(slides.length-1,n)); if(n===idx||busy) return;
   busy=true; setTimeout(()=>busy=false,500);
-  const prev=idx; idx=n;
+  const prev=idx; idx=n; if(idx===slides.length-1){qstage=0;renderQuiz();}
   if(prev>=0){const o=slides[prev];o.classList.remove('active');o.classList.add('leaving');setTimeout(()=>o.classList.remove('leaving'),450)}
   if(idx===-1){movie.pause();movie.currentTime=0;vprog.style.width='0';intro.classList.remove('gone','playing');cover.classList.remove('off')}
   else{movie.pause();intro.classList.add('gone');setTimeout(()=>slides[idx].classList.add('active'),prev>=0?220:60)}
   mark();
 }
-function next(){ if(idx===-1&&!cover.classList.contains('off')) return startVideo(); go(idx+1) }
-function back(){ go(idx-1) }
+let qstage=0; const questions=["¿Qué podemos organizar con Copilot Pages?", "¿Qué podemos hacer con una página después de crearla?", "¿Copilot Pages permite trabajar individualmente o en equipo?"], answers=["Ideas, información, planes y proyectos.", "Editar, mejorar y compartir su contenido.", "De ambas formas."];function renderQuiz(){let i=Math.floor(qstage/2), a=qstage%2;document.getElementById('qnum').textContent='PREGUNTA '+(i+1)+' DE 3';document.getElementById('qtext').textContent=questions[i];let el=document.getElementById('qanswer');el.textContent=answers[i];el.style.visibility=a?'visible':'hidden';if(a)el.animate([{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],{duration:450});else document.getElementById('qtext').animate([{opacity:0},{opacity:1}],{duration:450});}renderQuiz();
+function next(){ if(idx===slides.length-1){if(qstage<5){qstage++;renderQuiz()}return;} if(idx===-1&&!cover.classList.contains('off')) return startVideo(); go(idx+1) }
+function back(){ if(idx===slides.length-1&&qstage>0){qstage--;renderQuiz();return;} go(idx-1) }
 function fs(){ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.() }
 addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key==='PageDown'||(e.key===' '&&idx>=0)){e.preventDefault();next()}
@@ -314,3 +316,7 @@ mark();
 </script>
 </body>
 </html>
+
+
+
+
